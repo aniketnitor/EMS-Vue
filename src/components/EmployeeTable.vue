@@ -4,6 +4,7 @@
     <h2> / Employee List</h2>
     <div v-if="loading">Loading employees...</div>
     <div v-if="error" class="error">{{ error }}</div>
+    <div v-if="!employees.length">No records found!</div>
     <table class="sc-responsive-table" v-if="employees.length">
       <thead>
         <tr>
