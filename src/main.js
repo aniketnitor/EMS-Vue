@@ -4,6 +4,7 @@ import router from './router'
 import './assets/main.css'
 import { createPinia } from 'pinia';
 
+
 const pinia = createPinia()
 const app = createApp(App)
 

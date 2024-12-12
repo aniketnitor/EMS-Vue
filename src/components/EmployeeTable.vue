@@ -16,6 +16,7 @@
           <th>Department</th>
           <th>Salary</th>
           <th>Joining Date</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -29,19 +30,40 @@
           <td>{{ employee.department }}</td>
           <td>{{ employee.salary.toLocaleString("en-IN", { style: "currency", currency: "INR" }) }}</td>
           <td>{{ employee.joiningDate }}</td>
+          <td>
+            <div class="action-buttons">
+              <button 
+                @click="editEmployee(employee)" 
+                class="edit-btn"
+              >
+                Edit
+              </button>
+              <button 
+                @click="deleteEmployee(employee.id)" 
+                class="delete-btn"
+              >
+                Delete
+              </button>
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>
   </div>
 </template>
+
 <script>
 import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+
 export default {
   name: "EmployeeTable",
   setup() {
+    const router = useRouter();
     const employees = ref([]);
     const loading = ref(true);
     const error = ref(null);
+
     const fetchEmployees = async () => {
       try {
         const response = await fetch("http://localhost:8080/api/employees");
@@ -53,8 +75,40 @@ export default {
         loading.value = false;
       }
     };
+
+    const editEmployee = (employee) => {
+      router.push({ 
+        name: 'EditEmployee', 
+        params: { id: employee.id } 
+      });
+    };
+
+    const deleteEmployee = async (employeeId) => {
+      if (!confirm('Are you sure you want to delete this employee?')) return;
+
+      try {
+        const response = await fetch(`http://localhost:8080/api/employees/${employeeId}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) throw new Error(`Error ${response.status}`);
+
+        fetchEmployees();
+      } catch (err) {
+        error.value = `Failed to delete employee: ${err.message}`;
+      }
+    };
+
     onMounted(fetchEmployees);
-    return { employees, loading, error };
+
+    return { 
+      employees, 
+      loading, 
+      error, 
+      editEmployee, 
+      deleteEmployee 
+    };
   },
 };
 </script>
+
