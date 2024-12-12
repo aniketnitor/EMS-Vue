@@ -12,7 +12,7 @@
         <option value="OTHER">Other</option>
       </select>
       <input type="number" v-model="formData.age" placeholder="Age" required />
-      <input type="number" v-model="formData.salary" placeholder="Salary" step="0.01" required />
+      <input type="number" v-model="formData.salary" placeholder="Salary" required />
       <input 
         type="text" 
         v-model="formData.employeeId" 

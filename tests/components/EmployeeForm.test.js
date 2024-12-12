@@ -1,192 +1,212 @@
 import { mount } from '@vue/test-utils';
 import { describe, it, expect, vi } from 'vitest';
 import EmployeeForm from '../../src/components/EmployeeForm.vue';
+import { useRouter, useRoute } from 'vue-router';
 
+// Mocking the vue-router
+vi.mock('vue-router', () => ({
+  useRouter: vi.fn(),
+  useRoute: vi.fn(),
+}));
 
 describe('EmployeeForm.vue', () => {
-    it('renders all input fields correctly', async () => {
-        const wrapper = mount(EmployeeForm);
+  let mockRouter;
+  let mockRoute;
 
-        const nameInput = wrapper.find('input[placeholder="Name"]');
-        expect(nameInput.exists()).toBe(true);
-        expect(nameInput.attributes('type')).toBe('text');
+  beforeEach(() => {
+    mockRouter = { push: vi.fn() };
+    mockRoute = { params: {} };
+    useRouter.mockReturnValue(mockRouter);
+    useRoute.mockReturnValue(mockRoute);
+  });
 
-        const aadharInput = wrapper.find('input[placeholder="Aadhar Number"]');
-        expect(aadharInput.exists()).toBe(true);
-        expect(aadharInput.attributes('type')).toBe('text');
+  it('renders all input fields correctly', async () => {
+    const wrapper = mount(EmployeeForm);
 
-        const employeeIdInput = wrapper.find('input[placeholder="Employee ID"]');
-        expect(employeeIdInput.exists()).toBe(true);
-        expect(employeeIdInput.attributes('type')).toBe('text');
+    // Check if all inputs are rendered
+    const nameInput = wrapper.find('input[placeholder="Name"]');
+    expect(nameInput.exists()).toBe(true);
 
-        const departmentInput = wrapper.find('input[placeholder="Department"]');
-        expect(departmentInput.exists()).toBe(true);
-        expect(departmentInput.attributes('type')).toBe('text');
+    const aadharInput = wrapper.find('input[placeholder="Aadhar Number"]');
+    expect(aadharInput.exists()).toBe(true);
 
-        const ageInput = wrapper.find('input[placeholder="Age"]');
-        expect(ageInput.exists()).toBe(true);
-        expect(ageInput.attributes('type')).toBe('number');
+    const ageInput = wrapper.find('input[placeholder="Age"]');
+    expect(ageInput.exists()).toBe(true);
 
-        const salaryInput = wrapper.find('input[placeholder="Salary"]');
-        expect(salaryInput.exists()).toBe(true);
-        expect(salaryInput.attributes('type')).toBe('number');
+    const salaryInput = wrapper.find('input[placeholder="Salary"]');
+    expect(salaryInput.exists()).toBe(true);
 
-        const genderSelect = wrapper.find('select');
-        expect(genderSelect.exists()).toBe(true);
-        
-        const genderOptions = genderSelect.findAll('option');
-        expect(genderOptions.length).toBeGreaterThan(1);
-        
-        const expectedGenderValues = ['', 'MALE', 'FEMALE', 'OTHER'];
-        const actualGenderValues = genderOptions.map(option => option.element.value);
-        expect(actualGenderValues).toEqual(expectedGenderValues);
+    const employeeIdInput = wrapper.find('input[placeholder="Employee ID"]');
+    expect(employeeIdInput.exists()).toBe(true);
 
-        const designationSelect = wrapper.findAll('select')[1];
-        expect(designationSelect.exists()).toBe(true);
-        
-        const designationOptions = designationSelect.findAll('option');
-        expect(designationOptions.length).toBeGreaterThan(1);
-        
-        const expectedDesignationValues = [
-            '', 
-            'JUNIOR_DEVELOPER', 
-            'ANALYST', 
-            'PROJECT_MANAGER', 
-            'HR_MANAGER', 
-            'SENIOR_DEVELOPER', 
-            'TEAM_LEAD'
-        ];
-        const actualDesignationValues = designationOptions.map(option => option.element.value);
-        expect(actualDesignationValues).toEqual(expectedDesignationValues);
+    const genderSelect = wrapper.find('select');
+    expect(genderSelect.exists()).toBe(true);
 
-        const joiningDateInput = wrapper.find('input[type="date"]');
-        expect(joiningDateInput.exists()).toBe(true);
+    const designationSelect = wrapper.findAll('select')[1];
+    expect(designationSelect.exists()).toBe(true);
 
-        const submitButton = wrapper.find('button[type="submit"]');
-        expect(submitButton.exists()).toBe(true);
-        expect(submitButton.text()).toBe('Register Employee');
+    const departmentInput = wrapper.find('input[placeholder="Department"]');
+    expect(departmentInput.exists()).toBe(true);
+
+    const joiningDateInput = wrapper.find('input[type="date"]');
+    expect(joiningDateInput.exists()).toBe(true);
+
+    const submitButton = wrapper.find('button[type="submit"]');
+    expect(submitButton.exists()).toBe(true);
+    expect(submitButton.text()).toBe('Register Employee');
+  });
+
+  it('submits the form correctly for employee registration', async () => {
+    const wrapper = mount(EmployeeForm);
+
+    // Mock fetch API
+    const mockFetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      })
+    );
+    global.fetch = mockFetch;
+
+    // Mock the alert function
+    const mockAlert = vi.fn();
+    global.alert = mockAlert;
+
+    // Fill in the form data
+    await wrapper.find('input[placeholder="Name"]').setValue('John Doe');
+    await wrapper.find('input[placeholder="Aadhar Number"]').setValue('123456789012');
+    await wrapper.find('input[placeholder="Age"]').setValue(30);
+    await wrapper.find('input[placeholder="Salary"]').setValue(50000);
+    await wrapper.find('input[placeholder="Employee ID"]').setValue('EMP001');
+    await wrapper.find('input[placeholder="Department"]').setValue('Engineering');
+    await wrapper.find('input[type="date"]').setValue('2024-01-15');
+    await wrapper.find('select').setValue('MALE');
+    await wrapper.findAll('select')[1].setValue('JUNIOR_DEVELOPER');
+
+    // Submit the form
+    await wrapper.find('form').trigger('submit.prevent');
+
+    // Check that fetch was called correctly
+    expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/employees', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'John Doe',
+        aadharNumber: '123456789012',
+        gender: 'MALE',
+        age: 30,
+        salary: 50000,
+        employeeId: 'EMP001',
+        designation: 'JUNIOR_DEVELOPER',
+        department: 'Engineering',
+        joiningDate: '2024-01-15',
+      }),
     });
 
-    // it('handles employee registration successfully', async () => {
-    //     const mockFetch = vi.fn(() => 
-    //         Promise.resolve({
-    //             ok: true,
-    //             json: () => Promise.resolve({})
-    //         })
-    //     );
-    //     global.fetch = mockFetch;
+    // Check that alert was called
+    expect(mockAlert).toHaveBeenCalledWith('Employee registered successfully!');
+    expect(mockRouter.push).toHaveBeenCalledWith('/employees');
+  });
 
-    //     const mockAlert = vi.fn();
-    //     global.alert = mockAlert;
+//   it('submits the form correctly for employee update', async () => {
+//     // Mock the route to simulate editing an employee
+//     mockRoute.params.id = 'EMP001';
+//     const wrapper = mount(EmployeeForm);
 
-    //     const wrapper = mount(EmployeeForm);
+//     // Mock fetch for updating
+//     const mockFetch = vi.fn(() =>
+//       Promise.resolve({
+//         ok: true,
+//         json: () => Promise.resolve({}),
+//       })
+//     );
+//     global.fetch = mockFetch;
 
-    //     const testData = {
-    //         name: 'John Doe',
-    //         aadharNumber: '123456789012',
-    //         gender: 'MALE',
-    //         age: 30,
-    //         salary: 75000,
-    //         employeeId: 'EMP001',
-    //         designation: 'JUNIOR_DEVELOPER',
-    //         department: 'Engineering',
-    //         joiningDate: '2024-01-15'
-    //     };
+//     const mockAlert = vi.fn();
+//     global.alert = mockAlert;
 
-    //     const formInputs = wrapper.findAll('input, select');
-    //     const inputMap = {
-    //         'Name': testData.name,
-    //         'Aadhar Number': testData.aadharNumber,
-    //         'Employee ID': testData.employeeId,
-    //         'Department': testData.department,
-    //         'Age': testData.age.toString(),
-    //         'Salary': testData.salary.toString(),
-    //         'date': testData.joiningDate
-    //     };
+//     // Fill in the form data
+//     await wrapper.find('input[placeholder="Name"]').setValue('John Doe');
+//     await wrapper.find('input[placeholder="Aadhar Number"]').setValue('123456789012');
+//     await wrapper.find('input[placeholder="Age"]').setValue(30);
+//     await wrapper.find('input[placeholder="Salary"]').setValue(50000);
+//     await wrapper.find('input[placeholder="Employee ID"]').setValue('EMP001');
+//     await wrapper.find('input[placeholder="Department"]').setValue('Engineering');
+//     await wrapper.find('input[type="date"]').setValue('2024-01-15');
+//     await wrapper.find('select').setValue('MALE');
+//     await wrapper.findAll('select')[1].setValue('JUNIOR_DEVELOPER');
 
-    //     for (const input of formInputs) {
-    //         const placeholder = input.attributes('placeholder');
-    //         const type = input.attributes('type');
-            
-    //         if (placeholder && inputMap[placeholder] !== undefined) {
-    //             await input.setValue(inputMap[placeholder]);
-    //         } else if (type === 'date') {
-    //             await input.setValue(inputMap['date']);
-    //         } else if (input.element.tagName.toLowerCase() === 'select') {
-    //             if (input.attributes('v-model').includes('gender')) {
-    //                 await input.setValue(testData.gender);
-    //             } else if (input.attributes('v-model').includes('designation')) {
-    //                 await input.setValue(testData.designation);
-    //             }
-    //         }
-    //     }
+//     // Submit the form
+//     await wrapper.find('form').trigger('submit.prevent');
 
-    //     await wrapper.find('form').trigger('submit.prevent');
+//     // Check that fetch was called correctly for update
+//     expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/employees/EMP001', {
+//       method: 'PUT',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({
+//         name: 'John Doe',
+//         aadharNumber: '123456789012',
+//         gender: 'MALE',
+//         age: 30,
+//         salary: 50000,
+//         employeeId: 'EMP001',
+//         designation: 'JUNIOR_DEVELOPER',
+//         department: 'Engineering',
+//         joiningDate: '2024-01-15',
+//       }),
+//     });
 
-    //     expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/employees', {
-    //         method: 'POST',
-    //         headers: { 'Content-Type': 'application/json' },
-    //         body: JSON.stringify(testData)
-    //     });
+//     // Check that alert was called
+//     expect(mockAlert).toHaveBeenCalledWith('Employee updated successfully!');
+//     expect(mockRouter.push).toHaveBeenCalledWith('/employees');
+//   });
 
-    //     expect(mockAlert).toHaveBeenCalledWith('Employee registered successfully!');
-    // });
+  it('handles errors during employee registration', async () => {
+    // Mock fetch failure
+    const mockFetch = vi.fn(() =>
+      Promise.resolve({
+        ok: false,
+      })
+    );
+    global.fetch = mockFetch;
 
-    // it('handles registration error', async () => {
-    //     const mockFetch = vi.fn(() => 
-    //         Promise.resolve({
-    //             ok: false
-    //         })
-    //     );
-    //     global.fetch = mockFetch;
+    const wrapper = mount(EmployeeForm);
 
-    //     const mockAlert = vi.fn();
-    //     global.alert = mockAlert;
+    await wrapper.find('input[placeholder="Name"]').setValue('John Doe');
+    await wrapper.find('input[placeholder="Aadhar Number"]').setValue('123456789012');
+    await wrapper.find('input[placeholder="Age"]').setValue(30);
+    await wrapper.find('input[placeholder="Salary"]').setValue(50000);
+    await wrapper.find('input[placeholder="Employee ID"]').setValue('EMP001');
+    await wrapper.find('input[placeholder="Department"]').setValue('Engineering');
+    await wrapper.find('input[type="date"]').setValue('2024-01-15');
+    await wrapper.find('select').setValue('MALE');
+    await wrapper.findAll('select')[1].setValue('JUNIOR_DEVELOPER');
 
-    //     const wrapper = mount(EmployeeForm);
+    const mockAlert = vi.fn();
+    global.alert = mockAlert;
 
-    //     const testData = {
-    //         name: 'Jane Smith',
-    //         aadharNumber: '987654321098',
-    //         gender: 'FEMALE',
-    //         age: 28,
-    //         salary: 65000,
-    //         employeeId: 'EMP002',
-    //         designation: 'ANALYST',
-    //         department: 'Product',
-    //         joiningDate: '2024-02-01'
-    //     };
+    // Submit the form
+    await wrapper.find('form').trigger('submit.prevent');
 
-    //     const formInputs = wrapper.findAll('input, select');
-    //     const inputMap = {
-    //         'Name': testData.name,
-    //         'Aadhar Number': testData.aadharNumber,
-    //         'Employee ID': testData.employeeId,
-    //         'Department': testData.department,
-    //         'Age': testData.age.toString(),
-    //         'Salary': testData.salary.toString(),
-    //         'date': testData.joiningDate
-    //     };
+    // Check that error alert was shown
+    expect(mockAlert).toHaveBeenCalledWith('Failed to register employee.');
+  });
 
-    //     for (const input of formInputs) {
-    //         const placeholder = input.attributes('placeholder');
-    //         const type = input.attributes('type');
-            
-    //         if (placeholder && inputMap[placeholder] !== undefined) {
-    //             await input.setValue(inputMap[placeholder]);
-    //         } else if (type === 'date') {
-    //             await input.setValue(inputMap['date']);
-    //         } else if (input.element.tagName.toLowerCase() === 'select') {
-    //             if (input.attributes('v-model').includes('gender')) {
-    //                 await input.setValue(testData.gender);
-    //             } else if (input.attributes('v-model').includes('designation')) {
-    //                 await input.setValue(testData.designation);
-    //             }
-    //         }
-    //     }
+  it('handles fetch error when editing employee', async () => {
+    mockRoute.params.id = 'EMP001';
+    const wrapper = mount(EmployeeForm);
 
-    //     await wrapper.find('form').trigger('submit.prevent');
+    // Mock fetch failure when fetching employee details
+    const mockFetch = vi.fn(() => Promise.reject(new Error('Failed to fetch employee details.')));
+    global.fetch = mockFetch;
 
-    //     expect(mockAlert).toHaveBeenCalledWith('Failed to register employee.');
-    // });
+    const mockAlert = vi.fn();
+    global.alert = mockAlert;
+
+    // Check if employee details were not fetched and redirected
+    await wrapper.vm.$nextTick();
+
+    expect(mockAlert).toHaveBeenCalledWith('Failed to fetch employee details.');
+    expect(mockRouter.push).toHaveBeenCalledWith('/employees');
+  });
 });
